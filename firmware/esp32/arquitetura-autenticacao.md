@@ -22,6 +22,21 @@ O ESP32-S3 opera em SoftAP `Sabre3D` e serve a interface em `http://192.168.4.1`
 **Master:** administrador do equipamento. **Usuário comum:** operador de impressão. **Visitante:** consulta em modo somente leitura.
 
 
+## Sessões simultâneas por categoria
+
+**Regra obrigatória:** no máximo **uma sessão Master ativa** e **uma sessão de usuário comum ativa** por vez. Os dois perfis podem coexistir, mas nunca haverá duas sessões simultâneas do mesmo perfil. Visitantes não têm limite lógico de sessão, respeitando apenas a capacidade de conexões do ESP32.
+
+- Um novo login para um perfil já ocupado deve ser **recusado pelo servidor**, com mensagem clara informando que já existe sessão ativa.
+- O bloqueio é por **perfil**, inclusive entre abas ou dispositivos distintos; não basta limitar a interface.
+- A sessão deve ter identificador/token aleatório, estado no ESP32 e expiração controlada pelo servidor.
+- O botão **Sair** invalida a sessão imediatamente.
+- Fechamento abrupto de aba, queda de Wi-Fi ou desligamento do dispositivo não pode manter o perfil bloqueado indefinidamente: aplicar prazo de expiração e renovação de sessão enquanto houver atividade.
+- Não permitir que um novo login derrube silenciosamente a sessão anterior.
+- O acesso simultâneo de Master e usuário comum **não** autoriza comandos incompatíveis: o gerenciador único de impressão continua serializando e validando as operações.
+- Reinicialização do ESP32 invalida sessões anteriores; não presume retomada segura de impressão.
+
+**A definir na implementação:** duração da expiração, mecanismo de renovação, recuperação administrativa de sessão bloqueada e política de conflito quando Master e operador enviam comandos ao mesmo tempo.
+
 ## Requisitos de segurança
 
 - A autorização é **validada no firmware em cada endpoint e comando WebSocket**, nunca apenas ocultando botões na interface.
@@ -47,6 +62,6 @@ Todos os visitantes e operadores recebem o mesmo estado do trabalho atual. Somen
 
 ## Pendências de implementação
 
-Definir provisionamento e recuperação das duas contas, duração da sessão, política de múltiplos operadores e proteção das credenciais no ambiente SoftAP. A autorização por perfil deve ser verificada no servidor em toda requisição.
+Definir provisionamento e recuperação das duas contas, duração da sessão, política de conflitos entre master e operador e proteção das credenciais no ambiente SoftAP. A autorização por perfil deve ser verificada no servidor em toda requisição.
 
 Desenvolvido por DGandra - 2026.
