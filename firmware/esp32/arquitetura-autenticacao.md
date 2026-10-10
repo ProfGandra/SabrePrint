@@ -24,20 +24,20 @@ O ESP32-S3 opera em SoftAP `Sabre3D` e serve a interface em `http://192.168.4.1`
 
 ## Sessões simultâneas por categoria
 
-**Regra obrigatória:** no máximo **uma sessão Master ativa** e **uma sessão de usuário comum ativa** por vez. Os dois perfis podem coexistir, mas nunca haverá duas sessões simultâneas do mesmo perfil. Visitantes não têm limite lógico de sessão, respeitando apenas a capacidade de conexões do ESP32.
+**Regra obrigatória:** no máximo **uma sessão Master ativa** e **uma sessão de usuário comum ativa** por vez. Os dois perfis podem coexistir. Visitantes podem acessar simultaneamente, respeitando a capacidade de conexões do ESP32.
 
-- **Master:** um novo login com credenciais válidas substitui a sessão Master anterior. O servidor invalida imediatamente o token antigo, libera a nova sessão e notifica o navegador anterior, que volta ao modo visitante. Se a notificação em tempo real falhar, qualquer próxima chamada do token antigo será rejeitada.
-- **Usuário comum:** um novo login enquanto já existir sessão ativa é **recusado pelo servidor**, com mensagem clara.
-- A transferência de sessão Master **não interrompe a impressão em andamento** nem libera a execução de comandos pendentes sem validação.
-- O bloqueio é por **perfil**, inclusive entre abas ou dispositivos distintos; não basta limitar a interface.
-- A sessão deve ter identificador/token aleatório, estado no ESP32 e expiração controlada pelo servidor.
-- O botão **Sair** invalida a sessão imediatamente.
-- Fechamento abrupto de aba, queda de Wi-Fi ou desligamento do dispositivo não pode manter o perfil bloqueado indefinidamente: aplicar prazo de expiração e renovação de sessão enquanto houver atividade.
-- Não derrubar silenciosamente a sessão anterior: a sessão Master substituída recebe aviso de desconexão. O usuário comum não pode tomar a sessão ativa.
-- O acesso simultâneo de Master e usuário comum **não** autoriza comandos incompatíveis: o gerenciador único de impressão continua serializando e validando as operações.
-- Reinicialização do ESP32 invalida sessões anteriores; não presume retomada segura de impressão.
+### Transferência de sessão — Master e usuário comum
 
-**A definir na implementação:** duração da expiração, mecanismo de renovação, recuperação administrativa de sessão bloqueada e política de conflito quando Master e operador enviam comandos ao mesmo tempo.
+- Para **ambos os perfis**, um novo login com credenciais válidas em outro navegador ou dispositivo **substitui a sessão anterior da mesma categoria**.
+- O ESP32 invalida imediatamente o token antigo, cria a nova sessão e entrega ao novo navegador um snapshot atualizado do estado da impressora.
+- O navegador anterior recebe aviso de sessão encerrada e retorna ao modo visitante; caso perca a notificação, sua próxima requisição autenticada será recusada.
+- O login Master não encerra a sessão de usuário comum e vice-versa.
+- A troca de sessão não interrompe, reinicia nem altera o trabalho de impressão em andamento.
+- Todas as operações continuam sujeitas à autorização por perfil e à validação/serialização do gerenciador único de impressão.
+- Cada sessão possui token aleatório e expiração controlada pelo servidor. O botão **Sair** invalida a sessão imediatamente.
+- Após reinicialização do ESP32, sessões anteriores são inválidas; a recuperação de impressão é tratada separadamente.
+
+**A definir na implementação:** duração da expiração, mecanismo de renovação, política de conflito entre comandos de Master e usuário comum e proteção das credenciais no ambiente SoftAP.
 
 ## Requisitos de segurança
 
