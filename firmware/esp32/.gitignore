@@ -1,0 +1,7 @@
+.pio/
+.vscode/
+sdkconfig
+sdkconfig.old
+sdkconfig.*
+!sdkconfig.defaults
+.DS_Store
