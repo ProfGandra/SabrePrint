@@ -26,12 +26,14 @@ O ESP32-S3 opera em SoftAP `Sabre3D` e serve a interface em `http://192.168.4.1`
 
 **Regra obrigatória:** no máximo **uma sessão Master ativa** e **uma sessão de usuário comum ativa** por vez. Os dois perfis podem coexistir, mas nunca haverá duas sessões simultâneas do mesmo perfil. Visitantes não têm limite lógico de sessão, respeitando apenas a capacidade de conexões do ESP32.
 
-- Um novo login para um perfil já ocupado deve ser **recusado pelo servidor**, com mensagem clara informando que já existe sessão ativa.
+- **Master:** um novo login com credenciais válidas substitui a sessão Master anterior. O servidor invalida imediatamente o token antigo, libera a nova sessão e notifica o navegador anterior, que volta ao modo visitante. Se a notificação em tempo real falhar, qualquer próxima chamada do token antigo será rejeitada.
+- **Usuário comum:** um novo login enquanto já existir sessão ativa é **recusado pelo servidor**, com mensagem clara.
+- A transferência de sessão Master **não interrompe a impressão em andamento** nem libera a execução de comandos pendentes sem validação.
 - O bloqueio é por **perfil**, inclusive entre abas ou dispositivos distintos; não basta limitar a interface.
 - A sessão deve ter identificador/token aleatório, estado no ESP32 e expiração controlada pelo servidor.
 - O botão **Sair** invalida a sessão imediatamente.
 - Fechamento abrupto de aba, queda de Wi-Fi ou desligamento do dispositivo não pode manter o perfil bloqueado indefinidamente: aplicar prazo de expiração e renovação de sessão enquanto houver atividade.
-- Não permitir que um novo login derrube silenciosamente a sessão anterior.
+- Não derrubar silenciosamente a sessão anterior: a sessão Master substituída recebe aviso de desconexão. O usuário comum não pode tomar a sessão ativa.
 - O acesso simultâneo de Master e usuário comum **não** autoriza comandos incompatíveis: o gerenciador único de impressão continua serializando e validando as operações.
 - Reinicialização do ESP32 invalida sessões anteriores; não presume retomada segura de impressão.
 
